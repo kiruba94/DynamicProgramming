@@ -81,74 +81,87 @@ long int gridTraveller_optimised(int rows, int columns, std::unordered_map<std::
 /**
  * @brief grid traveller algo for grid with obstacles
  * find all the paths that can reach end from start
+ * Time Complexity = O(m*n)
  * 
- * @param matrix 
- * @param row 
- * @param column 
- * @param gridObsMap 
- * @return long int 
+ * @param input_matrix 
+ * @param start_row 
+ * @param start_column 
+ * @param pathsFromPositionMap 
+ * @return long int (total paths to target from current position)
  */
-long int gridTraveller_withObstacles(std::vector<std::vector<char>> &matrix, int row, int column, std::unordered_map<std::string, long int> *gridObsMap)
+long int gridTraveller_withObstacles(std::vector<std::vector<char>> &input_matrix, int start_row, int start_column, std::unordered_map<std::string, long int> *pathsFromPositionMap)
 {
-    if (gridObsMap == nullptr)
-        gridObsMap = new std::unordered_map<std::string, long int>();
-    std::string thisPos = std::to_string(row) + '_' + std::to_string(column);
-    if (gridObsMap->count(thisPos) != 0)
-        return gridObsMap->at(thisPos);
-    if (column >= matrix[0].size())
+    //initialise memo
+    if (pathsFromPositionMap == nullptr)
+        pathsFromPositionMap = new std::unordered_map<std::string, long int>();
+
+    //construct key for the current position
+    std::string thisPos = std::to_string(start_row) + '_' + std::to_string(start_column);
+    //search the map if we have already calculated for the current pos
+    if (pathsFromPositionMap->count(thisPos) != 0)
+        return pathsFromPositionMap->at(thisPos);
+    
+    //edge cases
+    if (start_column >= input_matrix[0].size() || start_row >= input_matrix.size())
         return 0;
-    if (row >= matrix.size())
-        return 0;
-    if (matrix[row][column] == 'e')
+
+    //base cases
+    if (input_matrix[start_row][start_column] == 'e')
         return 1;
-    if (matrix[row][column] == 'x')
+    if (input_matrix[start_row][start_column] == 'x')
         return 0;
-    (*gridObsMap)[thisPos] = gridTraveller_withObstacles(matrix, row + 1, column, gridObsMap) + gridTraveller_withObstacles(matrix, row, column + 1, gridObsMap);
-    return gridObsMap->at(thisPos);
+    
+    //estimate for the current pos
+    (*pathsFromPositionMap)[thisPos] = gridTraveller_withObstacles(input_matrix, start_row + 1, start_column, pathsFromPositionMap) + gridTraveller_withObstacles(input_matrix, start_row, start_column + 1, pathsFromPositionMap);
+
+    //return the value
+    return pathsFromPositionMap->at(thisPos);
 }
 
 /**
  * @brief grid traveller algo for grid with obstacles
  * find the shortest path between start and end
+ * Time Complexity = O(m*n)
  * 
- * @param matrix 
- * @param row 
- * @param column 
- * @param gridObsMap 
- * @return long int 
+ * @param input_matrix 
+ * @param start_row 
+ * @param start_column 
+ * @param positionToLengthMap 
+ * @return long int(shortest path from start to end) 
  */
-long int gridTraveller_shortestPathlength(std::vector<std::vector<char>> &matrix, int row, int column, std::unordered_map<std::string, long int> *gridObsMap)
+long int gridTraveller_shortestPathlength(std::vector<std::vector<char>> &input_matrix, int start_row, int start_column, std::unordered_map<std::string, long int> *positionToLengthMap)
 {
     //initialize memo
-    if (gridObsMap == nullptr)
-        gridObsMap = new std::unordered_map<std::string, long int>();
+    if (positionToLengthMap == nullptr)
+        positionToLengthMap = new std::unordered_map<std::string, long int>();
     //construct key for the current position
-    std::string thisPos = std::to_string(row) + '_' + std::to_string(column);
+    std::string thisPos = std::to_string(start_row) + '_' + std::to_string(start_column);
     //check the memo if we have already calculated for this pos
-    if (gridObsMap->count(thisPos) != 0)
-        return gridObsMap->at(thisPos);
+    if (positionToLengthMap->count(thisPos) != 0)
+        return positionToLengthMap->at(thisPos);
     //base case out of bounds
-    if (column >= matrix[0].size())
+    if (start_column >= input_matrix[0].size())
         return std::numeric_limits<long int>::max();
-    if (row >= matrix.size())
+    if (start_row >= input_matrix.size())
         return std::numeric_limits<long int>::max();
 
     //base case reached the end
-    if (matrix[row][column] == 'e')
+    if (input_matrix[start_row][start_column] == 'e')
         return 1;
     //base case reached obstacle
-    if (matrix[row][column] == 'x')
+    if (input_matrix[start_row][start_column] == 'x')
         return std::numeric_limits<long int>::max();
     
     //calculate the distance of path on either directions and choose the shortest path
-    long int downPathLength = gridTraveller_shortestPathlength(matrix, row + 1, column, gridObsMap);
-    long int rightPathLength = gridTraveller_shortestPathlength(matrix, row, column + 1, gridObsMap);
-    long int shortestPathLength = downPathLength < rightPathLength ? downPathLength + 1 : rightPathLength + 1;
+    long int downPathLength = gridTraveller_shortestPathlength(input_matrix, start_row + 1, start_column, positionToLengthMap);
+    long int rightPathLength = gridTraveller_shortestPathlength(input_matrix, start_row, start_column + 1, positionToLengthMap);
+    long int shortestPathLength = downPathLength < rightPathLength ? downPathLength : rightPathLength;
 
     //handlecase when both paths doesnt reach the end
-    if (shortestPathLength < 0)
-        return std::numeric_limits<long int>::max();
-
+    if (shortestPathLength >= 0 && shortestPathLength < std::numeric_limits<long int>::max()){
+        shortestPathLength +=1;
+    }
+    (*positionToLengthMap)[thisPos] = shortestPathLength;
     //return
-    return shortestPathLength;
+   return positionToLengthMap->at(thisPos);
 }
